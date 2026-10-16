@@ -1,0 +1,20 @@
+/* style.css */
+/* Styles for the demo page (index.html). */
+
+/* Basic page layout: centered column, readable font */
+body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 16px; background: #111; color: #eee; }
+
+/* The video fills the column width and keeps a black background while loading */
+video { width: 100%; background: #000; border-radius: 8px; }
+
+/* Controls row: dropdown and button side by side */
+.controls { display: flex; gap: 8px; margin: 12px 0; }
+
+/* Same look for the dropdown and the button */
+select, button { padding: 8px 12px; font-size: 1rem; border-radius: 6px; border: 1px solid #444; background: #222; color: #eee; }
+
+/* Status line under the controls */
+#status { color: #aaa; margin: 8px 0; }
+
+/* Segment log: monospace font, fixed height, scrolls when it gets long */
+#log { font-family: ui-monospace, monospace; font-size: 0.85rem; background: #000; padding: 8px; border-radius: 6px; height: 220px; overflow-y: auto; white-space: pre; }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!-- index.html -->
+<!-- Demo page: lists the available videos and plays them with HLS. -->
+<!-- Only the page structure lives here. Styles are in style.css and logic in app.js. -->
+<!-- Only used to demonstrate the service in a browser; the load generator does not need it. -->
+<html lang="en">
+<head>
+  <!-- Character encoding, so all text is displayed correctly -->
+  <meta charset="utf-8">
+  <!-- Makes the page scale properly on phones -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Title shown on the browser tab -->
+  <title>Video Streaming Demo</title>
+  <!-- Our stylesheet, served by FastAPI from app/static/style.css -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Page heading -->
+  <h1>Video Streaming Demo</h1>
+
+  <!-- Dropdown with the available videos, and a button to start playback -->
+  <div class="controls">
+    <!-- Filled by app.js from GET /videos -->
+    <select id="video-select"></select>
+    <!-- Starts playback of the selected video -->
+    <button id="play-btn">Play</button>
+  </div>
+
+  <!-- Status messages (loading, errors, which instance answered) -->
+  <div id="status">Loading video list...</div>
+
+  <!-- The video player. "controls" shows play/pause/seek, "muted" lets autoplay work in browsers -->
+  <video id="player" controls muted></video>
+
+  <!-- Log of every downloaded segment -->
+  <h2>Segments</h2>
+  <div id="log"></div>
+
+  <!-- Scripts go at the end of <body>, so all elements above exist when they run -->
+  <!-- hls.js: plays HLS in browsers without native support (Chrome, Firefox, Edge). Must load BEFORE app.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <!-- Our page logic, served by FastAPI from app/static/app.js -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
