@@ -25,7 +25,8 @@ def list_videos() -> dict:
     video_ids = video_service.list_videos()
     return {
         # For every video get its id and the url of its playlist
-        "videos": [{"id": v, "playlist": f"/videos/{v}/index.m3u8"} for v in video_ids]
+        "videos": [{"id": v, "playlist": f"/videos/{v}/index.m3u8"} for v in video_ids],
+        "instance": settings.instance_name
     }
 
 # GET /videos/[video_id]/{filename}
@@ -44,4 +45,6 @@ def get_video_file(video_id: str, filename: str) -> FileResponse:
         path,
         # Content-Type
         media_type=media_type,
+        # Header with instance name
+        headers={"X-Served-By": settings.instance_name}
     )

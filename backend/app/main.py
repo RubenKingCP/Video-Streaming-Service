@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, Response
 # Serves all files in a folder
 from fastapi.staticfiles import StaticFiles
 # Get routes used
-from app.api.routes import videos
+from app.api.routes import videos, health
 
 # Get settings used for the service
 from app.core.config import settings
@@ -26,6 +26,9 @@ app = FastAPI(title=settings.app_name) # Creates app
 
 # Metric middleware runs on each http request
 app.middleware("http")(metrics_middleware)
+
+# Adds endpoints /health
+app.include_router(health.router)
 
 #Adds endpoints to /videos
 app.include_router(videos.router)
