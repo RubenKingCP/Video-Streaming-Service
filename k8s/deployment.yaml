@@ -1,22 +1,83 @@
+# deployment.yaml
+# Runs the video streaming service as several identical Pods (replicas) spread over the nodes.
+# Apply with:  kubectl apply -f k8s/
+
+# API group and version for Deployments
 apiVersion: apps/v1
+# A Deployment keeps the requested number of Pods running and replaces them when they fail
 kind: Deployment
 metadata:
+  # Name of the Deployment (used in kubectl commands)
   name: video-streaming
+  # Labels: key/value tags used to find and group objects
   labels:
     app: video-streaming
 spec:
-  replicas: 1
+  # How many Pods to run. The HPA will change this number automatically in step 5
+  replicas: 3
+  # Which Pods belong to this Deployment: the ones with the label app=video-streaming
   selector:
     matchLabels:
       app: video-streaming
+  # The template every Pod is created from
   template:
     metadata:
+      # Every Pod gets this label, so the selector above and the Service can find it
       labels:
         app: video-streaming
     spec:
+      # Workload placement: spread the Pods as evenly as possible over the nodes
+      topologySpreadConstraints:
+        # At most 1 Pod difference between any two nodes
+        - maxSkew: 1
+          # "Spread over" = over different nodes (each node has a unique hostname label)
+          topologyKey: kubernetes.io/hostname
+          # If a perfect spread is impossible, still schedule the Pod (don't leave it Pending)
+          whenUnsatisfiable: ScheduleAnyway
+          # Count only our own Pods when computing the spread
+          labelSelector:
+            matchLabels:
+              app: video-streaming
       containers:
+        # Name of the container inside the Pod
         - name: video-streaming
-          image: python:3.13-slim
+          # The image built with: docker build -t video-streaming:1.0 .
+          image: video-streaming:1.0
+          # Use the image already loaded into the cluster; never try to download it from Docker Hub
+          imagePullPolicy: IfNotPresent
           ports:
+            # The port uvicorn listens on (see CMD in the Dockerfile). "http" is a name we can refer to
             - name: http
               containerPort: 8000
+          # Resource management
+          resources:
+            # requests: what the scheduler reserves for the Pod; also the base for HPA percentages
+            requests:
+              cpu: 100m        # 0.1 CPU core
+              memory: 128Mi
+            # limits: the maximum the container may use (CPU is throttled, memory over the limit = restart)
+            limits:
+              cpu: 500m        # 0.5 CPU core
+              memory: 256Mi
+          # Readiness: send traffic to this Pod only when it can serve videos
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            # Wait 2 s after start before the first check
+            initialDelaySeconds: 2
+            # Check every 5 s
+            periodSeconds: 5
+            # 3 failures in a row = not ready (removed from the Service)
+            failureThreshold: 3
+          # Liveness: restart the container if it stops answering
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            # Give the app time to start before the first check
+            initialDelaySeconds: 10
+            # Check every 10 s
+            periodSeconds: 10
+            # 3 failures in a row = restart
+            failureThreshold: 3

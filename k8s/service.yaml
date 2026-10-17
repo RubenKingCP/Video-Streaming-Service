@@ -1,0 +1,26 @@
+# service.yaml
+# Gives all video-streaming Pods ONE stable address and spreads the requests over them.
+
+# API version for core objects such as Services
+apiVersion: v1
+# A Service is a stable network endpoint in front of a changing set of Pods
+kind: Service
+metadata:
+  # Name of the Service. Inside the cluster it is also its DNS name: http://video-streaming
+  name: video-streaming
+  labels:
+    app: video-streaming
+spec:
+  # NodePort: reachable from outside the cluster on a fixed port of every node
+  type: NodePort
+  # Send traffic to every READY Pod with this label
+  selector:
+    app: video-streaming
+  ports:
+    - name: http
+      # Port of the Service inside the cluster
+      port: 80
+      # Port on the Pod (the named port "http" = 8000 in the Deployment)
+      targetPort: http
+      # Fixed port on every node (allowed range 30000-32767)
+      nodePort: 30080
