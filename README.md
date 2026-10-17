@@ -221,6 +221,7 @@ uvicorn app.main:app --reload
 | Problem | Fix |
 |---------|-----|
 | `"/media/hls": not found` during `docker build` | Run `scripts/prepare_media.py` first |
+| Player shows `Playback error: bufferAppendError` | The browser can't decode the segments. Re-run `scripts/prepare_media.py` (it converts to 1080p max, H.264 High@4.2, stereo 48 kHz), then hard-refresh the page (Ctrl+Shift+R) so no old cached segments are mixed in |
 | `ModuleNotFoundError: No module named 'app'` | Start uvicorn from inside `backend/` |
 | `failed to connect to the docker API` | Start Docker Desktop and wait for "Engine running" |
 | `port is already allocated` | Stop the other server, or use `-p 8001:8000` |

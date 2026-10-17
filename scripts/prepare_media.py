@@ -102,6 +102,13 @@ def main() -> None:
         *input_options(args),
         # Video codec H.264: supported by every browser
         "-c:v", "libx264",
+        # Shrink to fit inside 1920x1080 (portrait videos too), keep the aspect ratio and even sizes.
+        # Browsers often refuse 4K / level 5.x streams with "bufferAppendError"
+        "-vf", "scale=w='min(iw,1920)':h='min(ih,1080)':force_original_aspect_ratio=decrease:force_divisible_by=2",
+        # At most 60 frames per second (high-fps recordings would exceed the level below)
+        "-fpsmax", "60",
+        # Profile and level that every browser can decode (High@4.2 = up to 1080p60)
+        "-profile:v", "high", "-level:v", "4.2",
         # Encoding speed/size trade-off; veryfast is fine for a demo video
         "-preset", "veryfast",
         # Quality (lower = better, larger). 23 is the usual default
@@ -112,6 +119,8 @@ def main() -> None:
         "-force_key_frames", f"expr:gte(t,n_forced*{args.segment})",
         # Audio codec AAC (ignored if the input has no audio)
         "-c:a", "aac", "-b:a", "128k",
+        # Stereo at 48 kHz: 5.1 or 96 kHz audio from cameras/recorders also breaks playback in browsers
+        "-ac", "2", "-ar", "48000",
         # Stop at the end of the shortest input (needed for the test pattern + tone)
         "-shortest",
         # Output format HLS
