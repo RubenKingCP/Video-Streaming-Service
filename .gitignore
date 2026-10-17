@@ -7,10 +7,6 @@ venv/
 # Secrets
 .env
 
-# Βίντεο / uploads
-media/*
-!media/.gitkeep
-
 
 
 # IDE / OS
