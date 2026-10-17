@@ -16,7 +16,7 @@ from prometheus_client import Counter, Gauge, Histogram
 # TRequest Counter
 REQUESTS_TOTAL = Counter(
     # Metric name
-    "https_requests_total",
+    "http_requests_total",
     # Metric description
     "Total amount of HTTP requests",
     # Labels: divides metrics based on method, endpoint and status
