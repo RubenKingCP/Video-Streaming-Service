@@ -1,0 +1,125 @@
+
+VIDEO STREAMING SERVICE - HOW TO RUN
+====================================
+
+Run every command from the project root (the folder that contains the Dockerfile).
+On Windows PowerShell use "curl.exe" instead of "curl".
+
+
+0. REQUIREMENTS (install once)
+------------------------------
+- Docker Desktop (running; on Windows with the WSL 2 backend)
+  Give it about 7 GB of memory: Settings -> Resources
+- minikube and kubectl
+- Python 3.12+ (for Locust)
+- ffmpeg (only if you want to convert your own video)
+
+
+1. PREPARE THE VIDEO (optional)
+-------------------------------
+The repo already contains two ready videos: media/hls/sample and media/hls/test.
+Skip this step unless you want another video.
+
+    python scripts/prepare_media.py --input path/to/video.mp4 --id myvideo
+    python scripts/prepare_media.py --test        (60 s test pattern, no video needed)
+
+
+2. BUILD THE IMAGE
+------------------
+    docker build -t video-streaming:1.0 .
+
+
+3. RUN LOCALLY WITH DOCKER (check that it works)
+------------------------------------------------
+    docker run --rm -p 8000:8000 --name vs video-streaming:1.0
+
+In a second terminal:
+
+    curl http://localhost:8000/health/ready
+    curl http://localhost:8000/videos
+    curl -I http://localhost:8000/videos/test/seg_000.ts
+
+Expected: "ready", a list of videos, and "Content-Type: video/mp2t".
+In a browser: http://localhost:8000/  -> press Play.
+
+Stop it with Ctrl+C in the first terminal.
+
+
+4. START THE 3-NODE KUBERNETES CLUSTER
+--------------------------------------
+First time:
+
+    minikube start --nodes 3 --driver=docker --cpus 2 --memory 2200
+
+Later times just:
+
+    minikube start
+
+Check (3 nodes, all Ready):
+
+    kubectl get nodes
+
+
+5. LOAD THE IMAGE INTO THE CLUSTER AND DEPLOY
+---------------------------------------------
+    minikube image load video-streaming:1.0
+    kubectl apply -f k8s/
+
+Check (3 Pods, READY 1/1, on different nodes in the NODE column):
+
+    kubectl get pods -o wide
+
+Wait until all Pods are READY 1/1 before continuing.
+
+
+6. OPEN THE SERVICE
+-------------------
+    minikube service video-streaming --url
+
+KEEP THIS TERMINAL OPEN (on Windows it holds the tunnel).
+It prints a URL such as http://127.0.0.1:54321
+
+Open that URL in a browser and press Play.
+The segment log shows "served by: <pod name>"; different names = load balancing works.
+
+
+7. RUN THE WORKLOAD GENERATOR (LOCUST)
+--------------------------------------
+In a new terminal, once:
+
+    pip install locust
+
+Then (replace the URL with the one from step 6):
+
+    python -m locust -f scripts/locustfile.py --host=http://127.0.0.1:54321
+
+Open http://localhost:8089 in a browser, set the number of users and the
+spawn rate, and press Start. Watch the Charts tab.
+Stop the test with the Stop button, and Locust with Ctrl+C.
+
+
+8. USEFUL COMMANDS
+------------------
+    kubectl get pods -o wide                              Pods and their nodes
+    kubectl logs <pod-name>                               Logs of one Pod
+    kubectl describe pod <pod-name>                       Why a Pod is not starting
+    kubectl scale deployment video-streaming --replicas=5 Change replicas by hand
+
+
+9. STOP / CLEAN UP
+------------------
+    kubectl delete -f k8s/      remove the app from the cluster
+    minikube stop               stop the cluster (keeps it for next time)
+    minikube delete             delete the cluster completely
+
+
+10. COMMON PROBLEMS
+-------------------
+- "failed to connect to the docker API"  -> start Docker Desktop and wait for "Engine running"
+- "port is already allocated"             -> another server uses 8000; stop it or use -p 8001:8000
+- Pod ErrImagePull / ImagePullBackOff     -> run: minikube image load video-streaming:1.0
+- Pod stays READY 0/1                     -> the image has no videos; rebuild, reload, then:
+                                             kubectl rollout restart deployment video-streaming
+- Pod Pending                             -> not enough memory; give Docker/minikube more
+- After changing code                     -> build a new tag (e.g. 1.1), "minikube image load" it,
+                                             change "image:" in k8s/deployment.yaml, kubectl apply -f k8s/
