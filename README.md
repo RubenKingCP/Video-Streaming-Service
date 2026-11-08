@@ -148,6 +148,7 @@ kubectl get pods -o wide   # 3 Pods, READY 1/1, spread over the nodes (NODE colu
 
 ```bash
 minikube service video-streaming --url
+https://127.0.0.1:50269
 ```
 
 Keep that terminal open (with the Docker driver on Windows it holds a tunnel), open the printed URL and
